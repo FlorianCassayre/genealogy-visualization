@@ -10,16 +10,37 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
+      - name: Setup Gramps
+        run: sudo apt-get install -y gramps
       - name: Setup node
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v3
         with:
           node-version: 18
       - name: Install dependencies
         run: npm ci
-      - name: Build
-        run: npm run build
+      - name: Clone data
+        uses: actions/checkout@v3
+        with:
+          repository: cassayre/genealogy
+          path: genealogy
+          ssh-key: ${{ secrets.GENEALOGY_DEPLOY_KEY }}
+      - name: Convert Gedcom
+        run: npm run update:gedcom
+      - name: Compile data
+        run: npm run update:compile
       - name: Lint
         run: npm run lint
       - name: Style
         run: npm run prettier
+      - name: Build
+        run: npm run build
+      - name: Deploy
+        uses: burnett01/rsync-deployments@5.2.1
+        with:
+          switches: -avzr --delete
+          path: dist/
+          remote_path: genealogy
+          remote_host: genealogy.florian.cassayre.me
+          remote_user: github
+          remote_key: ${{ secrets.DEPLOY_KEY }}
