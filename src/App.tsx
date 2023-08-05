@@ -1,5 +1,7 @@
 import { QueryClient, QueryClientProvider } from 'react-query';
 import { Homepage } from './Homepage.tsx';
+import '@fontsource/inter';
+import { Layout } from './Layout.tsx';
 
 export const App = () => {
   const queryClient = new QueryClient({
@@ -14,7 +16,9 @@ export const App = () => {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <Homepage />
+      <Layout>
+        <Homepage />
+      </Layout>
     </QueryClientProvider>
   );
 };

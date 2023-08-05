@@ -1,13 +1,16 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { SimpleIndividualTree } from '../scripts/types';
-import * as _ from 'radash';
 import { interpolateSinebow } from 'd3-scale-chromatic';
+import * as _ from 'radash';
+import { Tooltip } from '@mui/joy';
 
 interface DiskVisualizationProps {
   data: SimpleIndividualTree;
 }
 
 export const DiskVisualization: React.FC<DiskVisualizationProps> = ({ data }) => {
+  const [hoveredKey, setHoveredKey] = useState<string | null>(null);
+
   const radius = 50;
   const initialAngle = Math.PI / 2;
   const strokeWidth = 1;
@@ -41,18 +44,59 @@ export const DiskVisualization: React.FC<DiskVisualizationProps> = ({ data }) =>
   const colors = _.objectify(
     uniquePlaces.map((v, i) => [v, i] as const),
     ([key]) => key,
-    ([key, i]) => key ? interpolate(uniquePlaces.length > 1 ? i / (uniquePlaces.length - 1) : 0) : 'white',
+    ([key, i]) => (key ? interpolate(uniquePlaces.length > 1 ? i / (uniquePlaces.length - 1) : 0) : 'white'),
   );
   const maxDistance = _.max(layout.map((p) => p.distance))! + radius;
   const size = (maxDistance + strokeWidth) * 2;
+  const handleEnter = (key: string) => setHoveredKey(key || null);
+  const handleLeave = (key: string) => {
+    if (hoveredKey === key) {
+      setHoveredKey(null);
+    }
+  };
   return (
-    <svg width={size} height={size}>
-      <g transform={`translate(${size / 2}, ${size / 2})`}>
-        {layout.map(({ place, ...props }, i) => (
-          <DiskTreeLayout key={i} {...props} color={colors[place]} />
-        ))}
-      </g>
-    </svg>
+    <Tooltip title={hoveredKey} followCursor>
+      <svg viewBox={[0, 0, size, size].join(' ')}>
+        <g transform={`translate(${size / 2}, ${size / 2})`}>
+          {Object.entries(_.group(layout, (p) => p.place)).map(([place, allProps], i) => (
+            <DiskTreeLayoutGroup
+              key={i}
+              onEnter={() => handleEnter(place)}
+              onLeave={() => handleLeave(place)}
+              focused={hoveredKey === null ? undefined : place === hoveredKey}
+            >
+              {allProps!.map(({ place, ...props }, i) => (
+                <DiskTreeLayout key={i} {...props} color={colors[place]} />
+              ))}
+            </DiskTreeLayoutGroup>
+          ))}
+        </g>
+      </svg>
+    </Tooltip>
+  );
+};
+
+interface DiskTreeLayoutGroupProps {
+  onEnter: () => void;
+  onLeave: () => void;
+  focused?: boolean;
+  children: React.ReactNode;
+}
+
+const DiskTreeLayoutGroup: React.FC<DiskTreeLayoutGroupProps> = ({ onEnter, onLeave, focused, children }) => {
+  return (
+    <g
+      opacity={focused !== false ? undefined : 0.25}
+      onMouseEnter={() => onEnter()}
+      onMouseLeave={() => onLeave()}
+      style={{
+        transition: 'opacity 0.5s, filter 0.5s',
+        filter: focused !== false ? undefined : 'grayscale(100%)',
+        cursor: 'help',
+      }}
+    >
+      {children}
+    </g>
   );
 };
 
