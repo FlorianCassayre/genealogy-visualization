@@ -1,6 +1,7 @@
 export interface Data {
   data: GenealogyData;
   geographyDisk: GeographyDiskData;
+  longevityDisk: LongevityDiskData;
 }
 
 export interface GenealogyData {
@@ -13,8 +14,10 @@ export interface IndividualTree<D> {
   data: D;
 }
 
-export type SimpleIndividualTree = IndividualTree<{ place: string }>;
-
 export interface GeographyDiskData {
-  tree: SimpleIndividualTree;
+  tree: IndividualTree<{ place: (string | null)[] | null }>;
+}
+
+export interface LongevityDiskData {
+  tree: IndividualTree<{ longevity: number | null }>;
 }

@@ -43,6 +43,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         {children}
         <Divider sx={{ my: 2 }} />
         <footer>
+          <Typography textAlign="center">This website is automatically generated from a Gedcom file</Typography>
           <Typography textAlign="center">Date updated: {renderDateBuilt()}</Typography>
         </footer>
       </Container>

@@ -1,17 +1,25 @@
 import { useDataQuery } from './hooks/useDataQuery.ts';
-import { DiskVisualization } from './viz/DiskVisualization.tsx';
 import { Box, Grid, Typography } from '@mui/joy';
+import { DiskGeographyVisualization } from './viz/DiskGeographyVisualization.tsx';
+import { DiskLongevityVisualization } from './viz/DiskLongevityVisualization.tsx';
 
 export const Homepage = () => {
   const { data } = useDataQuery('geographyDisk');
-  return data ? (
+  const { data: dataLongevity } = useDataQuery('longevityDisk');
+  return data && dataLongevity ? (
     <Box>
-      <Grid container justifyContent="center">
+      <Grid container justifyContent="center" spacing={2}>
         <Grid xs={12} sm={10} md={8} lg={7} xl={6}>
-          <Typography level="h3" color="neutral" textAlign="center" sx={{ mb: 3 }}>
-            Place of birth
+          <Typography level="h3" color="neutral" textAlign="center" sx={{ mt: 2, mb: 3 }}>
+            Location
           </Typography>
-          <DiskVisualization data={data.tree} />
+          <DiskGeographyVisualization data={data.tree} />
+        </Grid>
+        <Grid xs={12} sm={10} md={8} lg={7} xl={6}>
+          <Typography level="h3" color="neutral" textAlign="center" sx={{ mt: 2, mb: 3 }}>
+            Longevity
+          </Typography>
+          <DiskLongevityVisualization data={dataLongevity.tree} />
         </Grid>
       </Grid>
     </Box>
