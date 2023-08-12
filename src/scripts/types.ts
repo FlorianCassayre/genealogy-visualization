@@ -2,6 +2,8 @@ export interface Data {
   data: GenealogyData;
   geographyDisk: GeographyDiskData;
   longevityDisk: LongevityDiskData;
+  completenessDisk: CompletenessDiskData;
+  childrenCountDisk: ChildrenCountDiskData;
 }
 
 export interface GenealogyData {
@@ -20,4 +22,19 @@ export interface GeographyDiskData {
 
 export interface LongevityDiskData {
   tree: IndividualTree<{ longevity: number | null }>;
+}
+
+export interface EventCompleteness {
+  date: boolean;
+  place: boolean;
+}
+
+export interface CompletenessDiskData {
+  tree: IndividualTree<{
+    events: { birth: EventCompleteness; marriage: EventCompleteness; death: EventCompleteness } | null;
+  }>;
+}
+
+export interface ChildrenCountDiskData {
+  tree: IndividualTree<{ children: number | null }>;
 }

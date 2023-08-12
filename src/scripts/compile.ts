@@ -1,7 +1,15 @@
 import { readGedcom, SelectionEvent, SelectionGedcom, SelectionIndividualRecord, toJsDate } from 'read-gedcom';
 import { readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
-import { Data, GenealogyData, GeographyDiskData, LongevityDiskData } from './types';
+import {
+  ChildrenCountDiskData,
+  CompletenessDiskData,
+  Data,
+  EventCompleteness,
+  GenealogyData,
+  GeographyDiskData,
+  LongevityDiskData,
+} from './types';
 import * as _ from 'radash';
 import { buildIndividualTree } from './utils.ts';
 
@@ -50,10 +58,59 @@ const targetLongevityDisk = (gedcom: SelectionGedcom): LongevityDiskData => {
   };
 };
 
+const targetCompletenessDisk = (gedcom: SelectionGedcom): CompletenessDiskData => {
+  const root = gedcom.getIndividualRecord().arraySelect()[0];
+  const dataForIndividual = (
+    node: SelectionIndividualRecord,
+    depth: number,
+    child: SelectionIndividualRecord | null,
+  ): CompletenessDiskData['tree']['data'] => {
+    const completenessForEvent = (event: SelectionEvent): EventCompleteness => {
+      const dateValue = event.getDate().valueAsDate()[0];
+      const date = dateValue != null && dateValue.hasDate && dateValue.isDatePunctual && !dateValue.isDateApproximated;
+      const place = (event.getPlace().valueAsParts()[0]?.length ?? 0) >= 3;
+      return { date, place };
+    };
+    const birth = completenessForEvent(node.getEventBirth()),
+      death = completenessForEvent(node.getEventDeath()),
+      marriage = completenessForEvent(
+        node
+          .getFamilyAsSpouse()
+          .filterSelect((f) =>
+            f
+              .getChild()
+              .getIndividualRecord()
+              .pointer()
+              .some((p) => p === child?.pointer()?.[0]),
+          )
+          .getEventMarriage(),
+      );
+    return { events: depth >= TREE_DEPTH_SENSITIVE ? { birth, marriage, death } : null };
+  };
+  return {
+    tree: buildIndividualTree(root, dataForIndividual, TREE_DEPTH_LIMIT),
+  };
+};
+
+const targetChildrenCountDisk = (gedcom: SelectionGedcom): ChildrenCountDiskData => {
+  const root = gedcom.getIndividualRecord().arraySelect()[0];
+  return {
+    tree: buildIndividualTree(
+      root,
+      (node, depth) => ({
+        children: depth >= TREE_DEPTH_SENSITIVE ? node.getFamilyAsSpouse().getChild().length : null,
+      }),
+      TREE_DEPTH_LIMIT,
+    ),
+  };
+};
+
 const targets = (gedcom: SelectionGedcom): Data => ({
   data: targetGenealogyData(gedcom),
   geographyDisk: targetGeographyDisk(gedcom),
   longevityDisk: targetLongevityDisk(gedcom),
+  completenessDisk: targetCompletenessDisk(gedcom),
+  childrenCountDisk: targetChildrenCountDisk(gedcom),
 });
 
 const generateTargets = () => {
