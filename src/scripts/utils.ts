@@ -1,5 +1,8 @@
-import { SelectionIndividualRecord } from 'read-gedcom';
+import { SelectionGedcom, SelectionIndividualRecord } from 'read-gedcom';
 import { IndividualTree } from './types.ts';
+
+export const getRootIndividual = (gedcom: SelectionGedcom): SelectionIndividualRecord =>
+  gedcom.getIndividualRecord().arraySelect()[0];
 
 export const buildIndividualTree = <D extends object>(
   root: SelectionIndividualRecord,
@@ -37,4 +40,18 @@ export const buildIndividualTree = <D extends object>(
     };
   };
   return visit(root, 0, null);
+};
+
+export const treeDfs = <D extends object>(
+  tree: IndividualTree<D>,
+  // eslint-disable-next-line no-unused-vars
+  callback: (node: IndividualTree<D>) => void,
+): any => {
+  callback(tree);
+  const parents = [tree.father, tree.mother];
+  parents.forEach((parent) => {
+    if (parent !== undefined) {
+      treeDfs(parent, callback);
+    }
+  });
 };

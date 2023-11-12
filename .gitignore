@@ -27,3 +27,4 @@ dist-ssr
 genealogy/
 genealogy.ged
 public/data/*.json
+public/heraldry

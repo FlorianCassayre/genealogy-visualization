@@ -11,20 +11,15 @@ import {
   LongevityDiskData,
 } from './types';
 import * as _ from 'radash';
-import { buildIndividualTree } from './utils.ts';
-
-const INPUT_FILE = 'genealogy.ged';
-const OUTPUT_DIRECTORY = 'public/data';
-
-const TREE_DEPTH_LIMIT = 9;
-const TREE_DEPTH_SENSITIVE = 3;
+import { buildIndividualTree, getRootIndividual } from './utils.ts';
+import { INPUT_FILE, OUTPUT_DIRECTORY, TREE_DEPTH_LIMIT, TREE_DEPTH_SENSITIVE } from './config.ts';
 
 const targetGenealogyData = (gedcom: SelectionGedcom): GenealogyData => ({
   count: gedcom.getIndividualRecord().array().length,
 });
 
 const targetGeographyDisk = (gedcom: SelectionGedcom): GeographyDiskData => {
-  const root = gedcom.getIndividualRecord().arraySelect()[0];
+  const root = getRootIndividual(gedcom);
   const dataForIndividual = (node: SelectionIndividualRecord, depth: number): GeographyDiskData['tree']['data'] => {
     const parts = node.getEventBirth().getPlace().valueAsParts()[0];
     const place =
@@ -41,7 +36,7 @@ const targetGeographyDisk = (gedcom: SelectionGedcom): GeographyDiskData => {
 };
 
 const targetLongevityDisk = (gedcom: SelectionGedcom): LongevityDiskData => {
-  const root = gedcom.getIndividualRecord().arraySelect()[0];
+  const root = getRootIndividual(gedcom);
   const dataForIndividual = (node: SelectionIndividualRecord): LongevityDiskData['tree']['data'] => {
     const dateForEvent = (event: SelectionEvent): Date | null => {
       const dateValue = event.getDate().valueAsDate()[0];
@@ -59,7 +54,7 @@ const targetLongevityDisk = (gedcom: SelectionGedcom): LongevityDiskData => {
 };
 
 const targetCompletenessDisk = (gedcom: SelectionGedcom): CompletenessDiskData => {
-  const root = gedcom.getIndividualRecord().arraySelect()[0];
+  const root = getRootIndividual(gedcom);
   const dataForIndividual = (
     node: SelectionIndividualRecord,
     depth: number,
@@ -93,7 +88,7 @@ const targetCompletenessDisk = (gedcom: SelectionGedcom): CompletenessDiskData =
 };
 
 const targetChildrenCountDisk = (gedcom: SelectionGedcom): ChildrenCountDiskData => {
-  const root = gedcom.getIndividualRecord().arraySelect()[0];
+  const root = getRootIndividual(gedcom);
   return {
     tree: buildIndividualTree(
       root,

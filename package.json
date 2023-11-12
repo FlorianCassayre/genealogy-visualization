@@ -13,7 +13,8 @@
     "preview": "vite preview",
     "update:gramps": "if cd genealogy; then git pull; else git clone git@github.com:cassayre/genealogy.git genealogy; fi",
     "update:gedcom": "gramps -i genealogy/genealogy.gramps -e genealogy.ged -f ged && sed 's/(^[0-9]+ SURN .*|\\/.+\\/)$/\\U&\\E/' -r -i genealogy.ged",
-    "update:compile": "tsx src/scripts/compile.ts"
+    "update:compile": "tsx src/scripts/compile.ts",
+    "update:heraldry": "tsx src/scripts/download-heraldry.ts"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
