@@ -12,11 +12,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
       - name: Setup Gramps
-        run: sudo apt-get install -y gramps
+        run: sudo apt-get update && sudo apt-get install -y gramps
       - name: Setup node
         uses: actions/setup-node@v3
         with:
-          node-version: 18
+          node-version: 20
       - name: Install dependencies
         run: npm ci
       - name: Clone data

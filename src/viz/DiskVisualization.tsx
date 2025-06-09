@@ -30,7 +30,7 @@ type DiskVisualizationProps<D> = {
 export const DiskVisualization = <D,>(props: DiskVisualizationProps<D>): React.ReactElement => {
   const { data, color, tooltip } = props;
 
-  const hoveredDataRef = useRef<ExtendedData<D> | null>();
+  const hoveredDataRef = useRef<ExtendedData<D> | null>(undefined);
   const [hoveredData, setHoveredData] = useState<ExtendedData<D> | null>(null);
   const handleEnter = useCallback(
     (key: ExtendedData<D>) => {

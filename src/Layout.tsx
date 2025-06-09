@@ -8,8 +8,8 @@ interface LayoutProps {
 
 export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const renderDateBuilt = () => {
-    const timestamp = import.meta.env.BUILD_TIMESTAMP as number | undefined;
-    const date = new Date(timestamp ?? new Date().getTime());
+    const timestamp = import.meta.env.BUILD_TIMESTAMP;
+    const date = new Date(timestamp);
     return date.toLocaleDateString('en-us', { year: 'numeric', month: 'short', day: 'numeric' });
   };
   return (
