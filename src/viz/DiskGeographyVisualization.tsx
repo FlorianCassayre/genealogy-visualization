@@ -4,6 +4,34 @@ import { DiskVisualization, DiskVisualizationType } from './DiskVisualization.ts
 import { GeographyDiskData } from '../scripts/types.ts';
 import { Box, Slider, Stack } from '@mui/joy';
 
+interface HeraldryImageProps {
+  place: (string | null)[] | null;
+  level: number;
+}
+
+const HeraldryImage: React.FC<HeraldryImageProps> = ({ place, level }) => {
+  const [error, setError] = useState(false);
+  if (place === null || error) {
+    return null;
+  }
+  const part: string | null | undefined = place[level];
+  if (part == null) {
+    return null;
+  }
+  const directory = ['city', 'department', 'country'][level];
+  return (
+    !error && (
+      <Box
+        component="img"
+        src={`/heraldry/${directory}/${part}.svg`}
+        alt={part}
+        onError={() => setError(true)}
+        sx={{ width: '150px', p: 1 }}
+      />
+    )
+  );
+};
+
 interface DiskGeographyVisualizationProps {
   data: GeographyDiskData['tree'];
 }
@@ -33,6 +61,7 @@ export const DiskGeographyVisualization: React.FC<DiskGeographyVisualizationProp
           <Stack alignItems="center">
             <Box>Sosa {d.sosa}</Box>
             <Box>{formatPlace(d.place, false)}</Box>
+            <HeraldryImage key={`${JSON.stringify([d.place, level])}`} place={d.place} level={level} />
           </Stack>
         )}
         type={DiskVisualizationType.CATEGORY}

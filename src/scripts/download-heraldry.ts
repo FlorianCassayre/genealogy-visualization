@@ -85,31 +85,50 @@ const extractPlaces = async () => {
   return allPlaces;
 };
 
+const CONCURRENT_REQUEST_LIMIT = 8;
+
+const processPlace = async (task: { place: string; placeDirectory: string }) => {
+  const { place, placeDirectory } = task;
+  console.log(`[${place}] Fetching coat of arms...`);
+  try {
+    const url = await getCoatOfArmsImageUrl(place);
+    const extension = '.svg';
+    if (url !== null) {
+      if (url.endsWith(extension)) {
+        console.log(`[${place}] SVG found, downloading...`);
+        const fileResponse = await fetch(url);
+        if (!fileResponse.ok) {
+          throw new Error(`Failed to download ${url}: ${fileResponse.statusText}`);
+        }
+        const buffer = await fileResponse.arrayBuffer();
+        writeFileSync(join(placeDirectory, `${place}.svg`), new Uint8Array(buffer));
+        console.log(`[${place}] Saved successfully.`);
+      } else {
+        console.warn(`[${place}] Unrecognized extension: ${url}`);
+      }
+    } else {
+      console.log(`[${place}] No coat of arms found.`);
+    }
+  } catch (error) {
+    console.error(`[${place}] An error occurred:`, error);
+  }
+};
+
 const downloadAllCoatOfArms = async () => {
   const allPlaces = await extractPlaces();
-  const entries = Object.entries(allPlaces);
-  for (const entry of entries) {
-    const [directory, places] = entry;
+  console.log('\nPreparing all tasks for parallel download...');
+  const tasks: { place: string; placeDirectory: string }[] = [];
+  for (const [directory, places] of Object.entries(allPlaces)) {
     const placeDirectory = join(COAT_OF_ARMS_DIRECTORY, directory);
     mkdirSync(placeDirectory, { recursive: true });
     for (const place of places) {
-      console.log(`Fetching coats of arms for place '${place}'...`);
-      const url = await getCoatOfArmsImageUrl(place);
-      const extension = '.svg';
-      if (url !== null) {
-        if (url.endsWith(extension)) {
-          console.log('Saving...');
-          const fileResponse = await fetch(url);
-          const buffer = await fileResponse.arrayBuffer();
-          writeFileSync(join(placeDirectory, `${place}.svg`), new Uint8Array(buffer));
-        } else {
-          console.warn(`Unrecognized extension: ${url}`);
-        }
-      } else {
-        console.warn('No coat of arms found');
-      }
+      tasks.push({ place, placeDirectory });
     }
   }
+  console.log(`Found ${tasks.length} unique places to process.`);
+  console.log(`Starting download with a concurrency of ${CONCURRENT_REQUEST_LIMIT}...\n`);
+  await _.parallel(CONCURRENT_REQUEST_LIMIT, tasks, processPlace);
+  console.log('\nAll coat of arms processed successfully!');
 };
 
 void downloadAllCoatOfArms();
