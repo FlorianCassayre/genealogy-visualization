@@ -29,6 +29,8 @@ jobs:
         run: npm run update:gedcom
       - name: Compile data
         run: npm run update:compile
+      - name: Generate heraldry
+        run: npm run update:heraldry
       - name: Lint
         run: npm run lint
       - name: Style

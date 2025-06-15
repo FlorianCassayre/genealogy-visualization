@@ -1,19 +1,31 @@
 import pkg from '../../package.json' assert { type: 'json' };
-import { readFileSync, writeFileSync, mkdirSync } from 'fs';
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs';
 import { INPUT_FILE, PUBLIC_DIRECTORY, TREE_DEPTH_LIMIT, TREE_DEPTH_SENSITIVE } from './config.ts';
 import { readGedcom } from 'read-gedcom';
 import { buildIndividualTree, getRootIndividual, treeDfs } from './utils.ts';
 import * as _ from 'radash';
 import { join } from 'path';
 
+enum GeographicDivision {
+  // Order matters!
+  // eslint-disable-next-line no-unused-vars
+  City,
+  // eslint-disable-next-line no-unused-vars
+  Department,
+  // eslint-disable-next-line no-unused-vars
+  Country,
+}
+
+const GeographicDivisions = Object.values(GeographicDivision) as GeographicDivision[];
+
 const COAT_OF_ARMS_DIRECTORY = join(PUBLIC_DIRECTORY, 'heraldry');
 
-const getCoatOfArmsImageUrl = async (place: string): Promise<string | null> => {
+const getCoatOfArmsImageUrl = async (place: { place: string; type: GeographicDivision }[]): Promise<string | null> => {
   const labelLanguage = 'fr';
   const coatOfArmsProperty = 'P94';
   const sparqlQuery = `SELECT DISTINCT ?coa
      WHERE {
-       ?cityItem rdfs:label "${place.replace('\\', '\\\\').replace('"', '\\"')}"@${labelLanguage}.
+       ?cityItem rdfs:label "${place[0].place.replace('\\', '\\\\').replace('"', '\\"')}"@${labelLanguage}.
        ?cityItem wdt:${coatOfArmsProperty} ?coa.
      }
      LIMIT 1`;
@@ -60,70 +72,84 @@ const extractPlaces = async () => {
     },
     TREE_DEPTH_LIMIT,
   );
-  const sets: Record<number, Set<string>> = {};
+  const places: Record<string, { place: string; type: GeographicDivision }[]> = {};
   treeDfs(tree, (node) => {
-    if (node.data.place) {
-      for (let i = 0; i < node.data.place.length; i++) {
-        const place = node.data.place[i];
-        // Filter out places that start with numbers
-        if (place && (place.charAt(0) < '0' || place.charAt(0) > '9')) {
-          sets[i] ??= new Set();
-          sets[i].add(place);
+    const { place } = node.data;
+    if (place) {
+      const cappedPlaces = place.slice(Math.max(place.length - GeographicDivisions.length, 0), place.length);
+      const labelledPlaces = cappedPlaces.map((place, i) => ({
+        place,
+        type: GeographicDivisions[i + (GeographicDivisions.length - cappedPlaces.length)],
+      }));
+      const filteredPlaces = labelledPlaces.filter(
+        (o): o is { place: string; type: GeographicDivision } => o.place !== null,
+      );
+      if (filteredPlaces.length === labelledPlaces.length) {
+        for (let i = 0; i < filteredPlaces.length; i++) {
+          const thePlace = filteredPlaces.slice(i);
+          const key = JSON.stringify(thePlace);
+          places[key] = thePlace;
         }
       }
     }
   });
-  const directories = ['city', 'department', 'country'];
-  const allPlaces: Record<string, string[]> = {};
-  for (let i = 0; i < directories.length; i++) {
-    const directory = directories[i];
-    if (sets[i] !== undefined) {
-      const set = sets[i];
-      allPlaces[directory] = [...set].sort();
-    }
-  }
-  return allPlaces;
+  return Object.values(places);
 };
 
 const CONCURRENT_REQUEST_LIMIT = 8;
 
-const processPlace = async (task: { place: string; placeDirectory: string }) => {
-  const { place, placeDirectory } = task;
-  console.log(`[${place}] Fetching coat of arms...`);
+const DIRECTORIES: Record<GeographicDivision, string> = {
+  [GeographicDivision.City]: 'city',
+  [GeographicDivision.Department]: 'department',
+  [GeographicDivision.Country]: 'country',
+};
+
+const processPlace = async (task: {
+  place: { place: string; type: GeographicDivision }[];
+  name: string;
+  directory: string;
+}) => {
+  const { place, name, directory } = task;
+  const extension = '.svg';
+  const filePath = join(directory, `${name}${extension}`);
   try {
+    if (existsSync(filePath)) {
+      console.log(`[${name}] File exists, ignoring.`);
+      return;
+    }
+    console.log(`[${name}] Fetching coat of arms...`);
     const url = await getCoatOfArmsImageUrl(place);
-    const extension = '.svg';
     if (url !== null) {
       if (url.endsWith(extension)) {
-        console.log(`[${place}] SVG found, downloading...`);
+        console.log(`[${name}] SVG found, downloading...`);
         const fileResponse = await fetch(url);
         if (!fileResponse.ok) {
           throw new Error(`Failed to download ${url}: ${fileResponse.statusText}`);
         }
         const buffer = await fileResponse.arrayBuffer();
-        writeFileSync(join(placeDirectory, `${place}.svg`), new Uint8Array(buffer));
-        console.log(`[${place}] Saved successfully.`);
+        writeFileSync(filePath, new Uint8Array(buffer));
+        console.log(`[${name}] Saved successfully.`);
       } else {
-        console.warn(`[${place}] Unrecognized extension: ${url}`);
+        console.warn(`[${name}] Unrecognized extension: ${url}`);
       }
     } else {
-      console.log(`[${place}] No coat of arms found.`);
+      console.log(`[${name}] No coat of arms found.`);
     }
   } catch (error) {
-    console.error(`[${place}] An error occurred:`, error);
+    console.error(`[${name}] An error occurred:`, error);
   }
 };
 
 const downloadAllCoatOfArms = async () => {
   const allPlaces = await extractPlaces();
   console.log('\nPreparing all tasks for parallel download...');
-  const tasks: { place: string; placeDirectory: string }[] = [];
-  for (const [directory, places] of Object.entries(allPlaces)) {
+  const tasks: { place: (typeof allPlaces)[number]; name: string; directory: string }[] = [];
+  for (const parts of allPlaces) {
+    const directory = DIRECTORIES[parts[0].type];
     const placeDirectory = join(COAT_OF_ARMS_DIRECTORY, directory);
+    const name = parts.map(({ place }) => place).join(', ');
     mkdirSync(placeDirectory, { recursive: true });
-    for (const place of places) {
-      tasks.push({ place, placeDirectory });
-    }
+    tasks.push({ place: parts, name, directory: placeDirectory });
   }
   console.log(`Found ${tasks.length} unique places to process.`);
   console.log(`Starting download with a concurrency of ${CONCURRENT_REQUEST_LIMIT}...\n`);

@@ -14,17 +14,18 @@ const HeraldryImage: React.FC<HeraldryImageProps> = ({ place, level }) => {
   if (place === null || error) {
     return null;
   }
-  const part: string | null | undefined = place[level];
-  if (part == null) {
+  if (place.length < level) {
     return null;
   }
+  const part = place.slice(level);
   const directory = ['city', 'department', 'country'][level];
+  const name = part.join(', ');
   return (
     !error && (
       <Box
         component="img"
-        src={`/heraldry/${directory}/${part}.svg`}
-        alt={part}
+        src={`/heraldry/${directory}/${encodeURI(name)}.svg`}
+        alt={name}
         onError={() => setError(true)}
         sx={{ width: '150px', p: 1 }}
       />
