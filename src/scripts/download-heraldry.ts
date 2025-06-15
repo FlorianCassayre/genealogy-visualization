@@ -21,14 +21,47 @@ const GeographicDivisions = Object.values(GeographicDivision) as GeographicDivis
 const COAT_OF_ARMS_DIRECTORY = join(PUBLIC_DIRECTORY, 'heraldry');
 
 const getCoatOfArmsImageUrl = async (place: { place: string; type: GeographicDivision }[]): Promise<string | null> => {
+  const places = place.map(({ place }) => place);
+  const placeType = place[0].type;
+  const escapeSparql = (str: string) => str.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
   const labelLanguage = 'fr';
+  const instanceOfProperty = 'P31';
+  const subclassOfProperty = 'P279';
+  const countryProperty = 'P17';
+  const locatedInAdminTerritoryProperty = 'P131';
   const coatOfArmsProperty = 'P94';
-  const sparqlQuery = `SELECT DISTINCT ?coa
-     WHERE {
-       ?cityItem rdfs:label "${place[0].place.replace('\\', '\\\\').replace('"', '\\"')}"@${labelLanguage}.
-       ?cityItem wdt:${coatOfArmsProperty} ?coa.
-     }
-     LIMIT 1`;
+  const countryItem = 'Q6256';
+  const municipalityItem = 'Q15284';
+  const division1Item = 'Q10864048';
+  const division2Item = 'Q13220204';
+  const division3Item = 'Q13221722';
+  const sparqlQuery = `SELECT DISTINCT ?coa WHERE {
+  ?placeItem rdfs:label "${escapeSparql(places[0])}"@${labelLanguage}.
+  ?placeItem wdt:${coatOfArmsProperty} ?coa.
+  ${
+    placeType === GeographicDivision.City
+      ? `
+    ?country rdfs:label "${escapeSparql(places[2])}"@${labelLanguage}; wdt:${instanceOfProperty} wd:${countryItem}.
+    ?division rdfs:label "${escapeSparql(places[1])}"@${labelLanguage}; (wdt:${locatedInAdminTerritoryProperty}*/wdt:${countryProperty}) ?country.
+    ?placeItem wdt:${locatedInAdminTerritoryProperty}* ?division.
+    ?placeItem wdt:${instanceOfProperty}/wdt:${subclassOfProperty}* wd:${municipalityItem}.`
+      : ''
+  }
+  ${
+    placeType === GeographicDivision.Department
+      ? `
+    ?country rdfs:label "${escapeSparql(places[1])}"@${labelLanguage}; wdt:${instanceOfProperty} wd:${countryItem}.
+    VALUES ?type { wd:${division1Item} wd:${division2Item} wd:${division3Item} }
+    ?placeItem wdt:${instanceOfProperty}/wdt:${subclassOfProperty}* ?type.`
+      : ''
+  }
+  ${
+    placeType === GeographicDivision.Country
+      ? `
+    ?placeItem wdt:${instanceOfProperty} wd:${countryItem}.`
+      : ''
+  }
+  } LIMIT 1`;
 
   const result = await fetch('https://query.wikidata.org/sparql', {
     method: 'POST',
