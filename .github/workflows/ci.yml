@@ -29,7 +29,15 @@ jobs:
         run: npm run update:gedcom
       - name: Compile data
         run: npm run update:compile
+      - name: Cache heraldry data
+        id: cache-heraldry
+        uses: actions/cache@v4
+        with:
+          path: public/heraldry
+          key: heraldry-cache-${{ hashFiles('genealogy/genealogy.gramps') }}
+          restore-keys: heraldry-cache-
       - name: Generate heraldry
+        if: steps.cache-heraldry.outputs.cache-hit != 'true'
         run: npm run update:heraldry
       - name: Lint
         run: npm run lint
