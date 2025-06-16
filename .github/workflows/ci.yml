@@ -34,7 +34,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: public/heraldry
-          key: heraldry-cache-${{ hashFiles('genealogy/genealogy.gramps') }}
+          key: heraldry-cache-${{ hashFiles('genealogy/genealogy.gramps', 'src/scripts/download-heraldry.ts', '.github/workflows/ci.yml') }}
           restore-keys: heraldry-cache-
       - name: Generate heraldry
         if: steps.cache-heraldry.outputs.cache-hit != 'true'

@@ -129,7 +129,7 @@ const extractPlaces = async () => {
   return Object.values(places);
 };
 
-const CONCURRENT_REQUEST_LIMIT = 8;
+const CONCURRENT_REQUEST_LIMIT = 1;
 
 const DIRECTORIES: Record<GeographicDivision, string> = {
   [GeographicDivision.City]: 'city',
@@ -170,6 +170,7 @@ const processPlace = async (task: {
     }
   } catch (error) {
     console.error(`[${name}] An error occurred:`, error);
+    throw error;
   }
 };
 
