@@ -18,9 +18,12 @@ enum GeographicDivision {
 
 const GeographicDivisions = Object.values(GeographicDivision) as GeographicDivision[];
 
-const COAT_OF_ARMS_DIRECTORY = join(PUBLIC_DIRECTORY, 'heraldry');
+const HERALDRY_DIRECTORY = join(PUBLIC_DIRECTORY, 'heraldry');
 
-const getCoatOfArmsImageUrl = async (place: { place: string; type: GeographicDivision }[]): Promise<string | null> => {
+const getCoatOfArmsImageUrl = async (
+  place: { place: string; type: GeographicDivision }[],
+  flag: boolean,
+): Promise<string | null> => {
   const places = place.map(({ place }) => place);
   const placeType = place[0].type;
   const escapeSparql = (str: string) => str.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
@@ -29,7 +32,7 @@ const getCoatOfArmsImageUrl = async (place: { place: string; type: GeographicDiv
   const subclassOfProperty = 'P279';
   const countryProperty = 'P17';
   const locatedInAdminTerritoryProperty = 'P131';
-  const coatOfArmsProperty = 'P94';
+  const coatOfArmsProperty = flag ? 'P41' : 'P94';
   const countryItem = 'Q6256';
   const municipalityItem = 'Q15284';
   const division1Item = 'Q10864048';
@@ -129,7 +132,7 @@ const extractPlaces = async () => {
   return Object.values(places);
 };
 
-const CONCURRENT_REQUEST_LIMIT = 1;
+const CONCURRENT_REQUEST_LIMIT = 8;
 
 const DIRECTORIES: Record<GeographicDivision, string> = {
   [GeographicDivision.City]: 'city',
@@ -139,10 +142,11 @@ const DIRECTORIES: Record<GeographicDivision, string> = {
 
 const processPlace = async (task: {
   place: { place: string; type: GeographicDivision }[];
+  flag: boolean;
   name: string;
   directory: string;
 }) => {
-  const { place, name, directory } = task;
+  const { place, flag, name, directory } = task;
   const extension = '.svg';
   const filePath = join(directory, `${name}${extension}`);
   try {
@@ -151,7 +155,7 @@ const processPlace = async (task: {
       return;
     }
     console.log(`[${name}] Fetching coat of arms...`);
-    const url = await getCoatOfArmsImageUrl(place);
+    const url = await getCoatOfArmsImageUrl(place, flag);
     if (url !== null) {
       if (url.endsWith(extension)) {
         console.log(`[${name}] SVG found, downloading...`);
@@ -177,13 +181,17 @@ const processPlace = async (task: {
 const downloadAllCoatOfArms = async () => {
   const allPlaces = await extractPlaces();
   console.log('\nPreparing all tasks for parallel download...');
-  const tasks: { place: (typeof allPlaces)[number]; name: string; directory: string }[] = [];
+  const tasks: { place: (typeof allPlaces)[number]; flag: boolean; name: string; directory: string }[] = [];
   for (const parts of allPlaces) {
     const directory = DIRECTORIES[parts[0].type];
-    const placeDirectory = join(COAT_OF_ARMS_DIRECTORY, directory);
     const name = parts.map(({ place }) => place).join(', ');
-    mkdirSync(placeDirectory, { recursive: true });
-    tasks.push({ place: parts, name, directory: placeDirectory });
+    [false, true]
+      .filter((flag) => !flag || parts[0].type !== GeographicDivision.City)
+      .forEach((flag) => {
+        const placeDirectory = join(HERALDRY_DIRECTORY, flag ? 'flag' : 'coat-of-arms', directory);
+        mkdirSync(placeDirectory, { recursive: true });
+        tasks.push({ place: parts, flag, name, directory: placeDirectory });
+      });
   }
   console.log(`Found ${tasks.length} unique places to process.`);
   console.log(`Starting download with a concurrency of ${CONCURRENT_REQUEST_LIMIT}...\n`);

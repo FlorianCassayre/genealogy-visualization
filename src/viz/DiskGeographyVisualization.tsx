@@ -24,7 +24,7 @@ const HeraldryImage: React.FC<HeraldryImageProps> = ({ place, level }) => {
     !error && (
       <Box
         component="img"
-        src={`/heraldry/${directory}/${encodeURI(name)}.svg`}
+        src={`/heraldry/coat-of-arms/${directory}/${encodeURI(name)}.svg`}
         alt={name}
         onError={() => setError(true)}
         sx={{ width: '150px', p: 1 }}
