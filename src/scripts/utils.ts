@@ -8,11 +8,8 @@ export const buildIndividualTree = <D extends object>(
   root: SelectionIndividualRecord,
 
   dataForIndividual: (
-    // eslint-disable-next-line no-unused-vars
     individual: SelectionIndividualRecord,
-    // eslint-disable-next-line no-unused-vars
     depth: number,
-    // eslint-disable-next-line no-unused-vars
     child: SelectionIndividualRecord | null,
   ) => D,
   depthLimit: number,
@@ -44,7 +41,6 @@ export const buildIndividualTree = <D extends object>(
 
 export const treeDfs = <D extends object>(
   tree: IndividualTree<D>,
-  // eslint-disable-next-line no-unused-vars
   callback: (node: IndividualTree<D>) => void,
 ): any => {
   callback(tree);

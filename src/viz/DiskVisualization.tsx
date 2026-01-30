@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { IndividualTree } from '../scripts/types';
 import * as _ from 'radash';
@@ -6,7 +5,6 @@ import { Tooltip } from '@mui/joy';
 
 type ExtendedData<D> = D & { sosa: number };
 
-// eslint-disable-next-line react-refresh/only-export-components
 export enum DiskVisualizationType {
   CATEGORY,
   SCALE,

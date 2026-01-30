@@ -8,11 +8,8 @@ import { join } from 'path';
 
 enum GeographicDivision {
   // Order matters!
-  // eslint-disable-next-line no-unused-vars
   City,
-  // eslint-disable-next-line no-unused-vars
   Department,
-  // eslint-disable-next-line no-unused-vars
   Country,
 }
 
@@ -88,7 +85,7 @@ const getCoatOfArmsImageUrl = async (
 
 const extractPlaces = async () => {
   console.log('Loading file...');
-  const buffer = readFileSync(INPUT_FILE);
+  const { buffer } = readFileSync(INPUT_FILE);
   console.log('Reading Gedcom...');
   const gedcom = readGedcom(buffer);
   const root = getRootIndividual(gedcom);

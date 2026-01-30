@@ -110,7 +110,7 @@ const targets = (gedcom: SelectionGedcom): Data => ({
 
 const generateTargets = () => {
   console.log('Loading file...');
-  const buffer = readFileSync(INPUT_FILE);
+  const { buffer } = readFileSync(INPUT_FILE);
   console.log('Reading Gedcom...');
   const gedcom = readGedcom(buffer);
   console.log('Generating targets...');

@@ -1,4 +1,4 @@
-import { QueryClient, QueryClientProvider } from 'react-query';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Homepage } from './Homepage.tsx';
 import '@fontsource/inter';
 import { Layout } from './Layout.tsx';
@@ -8,7 +8,6 @@ export const App = () => {
     defaultOptions: {
       queries: {
         refetchOnWindowFocus: false,
-        cacheTime: Infinity,
         staleTime: Infinity, // Technically this is the only parameter that we need to override
       },
     },
