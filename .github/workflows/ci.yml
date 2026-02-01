@@ -29,16 +29,6 @@ jobs:
         run: npm run update:gedcom
       - name: Compile data
         run: npm run update:compile
-      - name: Cache heraldry data
-        id: cache-heraldry
-        uses: actions/cache@v4
-        with:
-          path: public/heraldry
-          key: heraldry-cache-${{ hashFiles('genealogy/genealogy.gramps', 'src/scripts/download-heraldry.ts', '.github/workflows/ci.yml') }}
-          restore-keys: heraldry-cache-
-      - name: Generate heraldry
-        if: steps.cache-heraldry.outputs.cache-hit != 'true'
-        run: npm run update:heraldry
       - name: Lint
         run: npm run lint
       - name: Style
@@ -48,7 +38,7 @@ jobs:
       - name: Deploy
         uses: burnett01/rsync-deployments@5.2.1
         with:
-          switches: -avzr --delete
+          switches: -avzr --delete --exclude='heraldry/**'
           path: dist/
           remote_path: genealogy
           remote_host: genealogy.florian.cassayre.me
