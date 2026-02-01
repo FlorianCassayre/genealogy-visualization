@@ -13,7 +13,7 @@ export enum DiskVisualizationType {
 type DiskVisualizationProps<D> = {
   data: IndividualTree<D>;
   color: (value: number) => string;
-  tooltip: (node: ExtendedData<D>) => React.ReactNode;
+  tooltip: (node: ExtendedData<D>, color: string) => React.ReactNode;
 } & (
   | {
       type: DiskVisualizationType.CATEGORY;
@@ -139,7 +139,7 @@ export const DiskVisualization = <D,>(props: DiskVisualizationProps<D>): React.R
   }, [props, layout]);
 
   return (
-    <Tooltip title={hoveredData !== null ? tooltip(hoveredData) : null} followCursor>
+    <Tooltip title={hoveredData !== null ? tooltip(hoveredData, colorForData(hoveredData)) : null} followCursor>
       <svg viewBox={[0, 0, size, size].join(' ')}>
         <g transform={`translate(${size / 2}, ${size / 2})`}>
           {grouped.map((allProps, i) => (
