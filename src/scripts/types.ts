@@ -4,6 +4,7 @@ export interface Data {
   longevityDisk: LongevityDiskData;
   completenessDisk: CompletenessDiskData;
   childrenCountDisk: ChildrenCountDiskData;
+  geographyGeneration: GeographyGenerationData;
 }
 
 export interface GenealogyData {
@@ -37,4 +38,8 @@ export interface CompletenessDiskData {
 
 export interface ChildrenCountDiskData {
   tree: IndividualTree<{ children: number | null }>;
+}
+
+export interface GeographyGenerationData {
+  generations: { departments: { place: [string, string]; distribution: number; count: number }[] }[];
 }

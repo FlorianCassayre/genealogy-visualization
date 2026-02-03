@@ -3,8 +3,7 @@ import { interpolateSinebow } from 'd3-scale-chromatic';
 import { DiskVisualization, DiskVisualizationType } from './DiskVisualization.tsx';
 import { GeographyDiskData } from '../scripts/types.ts';
 import { Box, Slider, Stack } from '@mui/joy';
-import svgFranceDepartments from '@svg-maps/france.departments';
-import { SvgMap } from '../types/SvgMap.ts';
+import { FranceMapDepartmentImage } from '../components/FranceMapImage.tsx';
 
 interface HeraldryImageProps {
   place: (string | null)[] | null;
@@ -32,23 +31,6 @@ const HeraldryImage: React.FC<HeraldryImageProps> = ({ place, level }) => {
         sx={{ width: '150px', p: 1 }}
       />
     )
-  );
-};
-
-interface FranceMapImageProps {
-  source: SvgMap;
-  highlighted?: Record<string, string>;
-}
-
-const FranceMapImage: React.FC<FranceMapImageProps> = ({ source, highlighted = {} }) => {
-  return (
-    <svg viewBox={source.viewBox}>
-      {source.locations.map(({ name, id, path }) => {
-        const highlightColor = highlighted[name];
-        const fill = highlightColor ?? 'white';
-        return <path key={id} d={path} fill={fill} stroke="black" />;
-      })}
-    </svg>
   );
 };
 
@@ -84,7 +66,7 @@ export const DiskGeographyVisualization: React.FC<DiskGeographyVisualizationProp
             <HeraldryImage key={`${JSON.stringify([d.place, level])}`} place={d.place} level={level} />
             {level === 1 && !!d.place && d.place[1] && (
               <Box sx={{ width: '200px', p: 1 }}>
-                <FranceMapImage source={svgFranceDepartments} highlighted={{ [d.place[1]]: color }} />
+                <FranceMapDepartmentImage highlighted={{ [d.place[1]]: color }} />
               </Box>
             )}
           </Stack>
